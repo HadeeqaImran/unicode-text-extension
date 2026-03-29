@@ -43,6 +43,7 @@ class InlinePickerApp {
     canCopy: false
   };
   private host = document.createElement("div");
+  private backdrop = document.createElement("div");
   private button = document.createElement("button");
   private popover = document.createElement("section");
   private sourceInput = document.createElement("textarea");
@@ -74,6 +75,9 @@ class InlinePickerApp {
   private buildUi(): void {
     this.host.className = "utc-shell";
     this.host.setAttribute("data-utc-root", "true");
+
+    this.backdrop.className = "utc-backdrop";
+    this.backdrop.hidden = true;
 
     this.button.type = "button";
     this.button.className = "utc-fab";
@@ -142,7 +146,7 @@ class InlinePickerApp {
     this.status.className = "utc-status";
 
     this.popover.append(header, this.contextNote, sourceLabel, this.sourceInput, searchWrap, previewCard, this.styleList, this.status);
-    this.host.append(this.button, this.popover);
+    this.host.append(this.backdrop, this.button, this.popover);
     document.documentElement.append(this.host);
     this.refreshPreview();
     this.refreshStyleList();
@@ -205,6 +209,12 @@ class InlinePickerApp {
       true
     );
 
+    this.backdrop.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.hidePopover();
+    });
+
     this.button.addEventListener("pointerdown", (event) => {
       event.preventDefault();
     });
@@ -215,8 +225,6 @@ class InlinePickerApp {
     this.closeButton.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       event.stopPropagation();
-    });
-    this.closeButton.addEventListener("click", () => {
       this.hidePopover();
     });
 
@@ -263,6 +271,7 @@ class InlinePickerApp {
   }
 
   private hideAllUi(): void {
+    this.backdrop.hidden = true;
     this.popover.hidden = true;
     this.button.hidden = true;
     this.isPopoverOpen = false;
@@ -336,6 +345,7 @@ class InlinePickerApp {
 
     this.currentCapabilities = describeSelectionCapabilities(this.selectionSnapshot, this.caretSnapshot);
     this.button.hidden = true;
+    this.backdrop.hidden = false;
     this.popover.hidden = false;
     this.isPopoverOpen = true;
     this.refreshStyleList();
@@ -347,6 +357,7 @@ class InlinePickerApp {
   }
 
   private hidePopover(): void {
+    this.backdrop.hidden = true;
     this.popover.hidden = true;
     this.isPopoverOpen = false;
     this.status.textContent = "";

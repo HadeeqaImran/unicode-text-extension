@@ -3,8 +3,7 @@
   "name": "Unicode Text Converter",
   "version": "1.0.0",
   "description": "Highlight text, convert it into Unicode styled text locally, then replace, insert, or copy it.",
-  "permissions": ["storage", "contextMenus", "activeTab", "tabs", "clipboardWrite"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": ["storage", "contextMenus", "clipboardWrite"],
   "background": {
     "service_worker": "dist/background/service-worker.js"
   },

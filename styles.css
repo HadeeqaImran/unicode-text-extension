@@ -38,6 +38,20 @@
   background: transparent;
 }
 
+.utc-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483644;
+  pointer-events: none;
+}
+
+.utc-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
 .utc-popup-frame {
   display: flex;
   flex-direction: column;
@@ -84,6 +98,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  pointer-events: auto;
 }
 
 .utc-popover > *,
