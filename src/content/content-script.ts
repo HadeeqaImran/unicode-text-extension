@@ -43,9 +43,11 @@ class InlinePickerApp {
     canCopy: false
   };
   private host = document.createElement("div");
+  private shadowRootNode = this.host.attachShadow({ mode: "open" });
   private backdrop = document.createElement("div");
   private button = document.createElement("button");
   private popover = document.createElement("section");
+  private header = document.createElement("div");
   private sourceInput = document.createElement("textarea");
   private searchInput = document.createElement("input");
   private previewLabel = document.createElement("div");
@@ -61,6 +63,11 @@ class InlinePickerApp {
   private hasSelectionContext = false;
   private dismissedSelectionSignature: string | null = null;
   private filteredStyles = STYLE_DEFINITIONS;
+  private dragOffsetX = 0;
+  private dragOffsetY = 0;
+  private isDragging = false;
+  private dragPointerId: number | null = null;
+  private customPopoverPosition: { left: number; top: number } | null = null;
   private syncSelectionUiDebounced = debounce(() => this.syncSelectionUi(), 120);
   private refreshStylesDebounced = debounce(() => this.refreshStyleList(), 60);
 
@@ -70,11 +77,18 @@ class InlinePickerApp {
     this.caretSnapshot = captureCaretSnapshot();
     this.buildUi();
     this.attachListeners();
+    this.hideAllUi();
   }
 
   private buildUi(): void {
     this.host.className = "utc-shell";
     this.host.setAttribute("data-utc-root", "true");
+    this.host.style.pointerEvents = "none";
+
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = chrome.runtime.getURL("styles.css");
+    this.shadowRootNode.append(stylesheet);
 
     this.backdrop.className = "utc-backdrop";
     this.backdrop.hidden = true;
@@ -90,8 +104,7 @@ class InlinePickerApp {
     this.popover.setAttribute("aria-label", "Unicode text style picker");
     this.popover.hidden = true;
 
-    const header = document.createElement("div");
-    header.className = "utc-header";
+    this.header.className = "utc-header utc-drag-handle";
 
     const titleWrap = document.createElement("div");
     titleWrap.className = "utc-title-wrap";
@@ -111,7 +124,7 @@ class InlinePickerApp {
     this.closeButton.textContent = "×";
     this.closeButton.setAttribute("aria-label", "Close");
 
-    header.append(titleWrap, this.closeButton);
+    this.header.append(titleWrap, this.closeButton);
 
     this.contextNote.className = "utc-context-note";
 
@@ -145,8 +158,8 @@ class InlinePickerApp {
 
     this.status.className = "utc-status";
 
-    this.popover.append(header, this.contextNote, sourceLabel, this.sourceInput, searchWrap, previewCard, this.styleList, this.status);
-    this.host.append(this.backdrop, this.button, this.popover);
+    this.popover.append(this.header, this.contextNote, sourceLabel, this.sourceInput, searchWrap, previewCard, this.styleList, this.status);
+    this.shadowRootNode.append(this.backdrop, this.button, this.popover);
     document.documentElement.append(this.host);
     this.refreshPreview();
     this.refreshStyleList();
@@ -214,15 +227,127 @@ class InlinePickerApp {
       event.stopPropagation();
       this.hidePopover();
     });
-
-    this.button.addEventListener("pointerdown", (event) => {
+    this.backdrop.addEventListener("mousedown", (event) => {
       event.preventDefault();
+      event.stopPropagation();
+      this.hidePopover();
     });
-    this.button.addEventListener("click", () => {
-      this.openPicker("selection");
+
+    this.header.addEventListener("pointerdown", (event) => {
+      if (event.target === this.closeButton || this.closeButton.contains(event.target as Node)) {
+        return;
+      }
+
+      if (event.button !== 0) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      const rect = this.popover.getBoundingClientRect();
+      this.isDragging = true;
+      this.dragPointerId = event.pointerId;
+      this.dragOffsetX = event.clientX - rect.left;
+      this.dragOffsetY = event.clientY - rect.top;
+      try {
+        this.header.setPointerCapture(event.pointerId);
+      } catch {
+        // Ignore capture failures on pages with unusual event behavior.
+      }
     });
+    this.header.addEventListener("mousedown", (event) => {
+      if (event.target === this.closeButton || this.closeButton.contains(event.target as Node)) {
+        return;
+      }
+
+      if (event.button !== 0) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      const rect = this.popover.getBoundingClientRect();
+      this.isDragging = true;
+      this.dragPointerId = null;
+      this.dragOffsetX = event.clientX - rect.left;
+      this.dragOffsetY = event.clientY - rect.top;
+    });
+
+    window.addEventListener(
+      "pointermove",
+      (event) => {
+        if (!this.isDragging || this.dragPointerId !== event.pointerId) {
+          return;
+        }
+
+        this.customPopoverPosition = {
+          left: event.clientX - this.dragOffsetX,
+          top: event.clientY - this.dragOffsetY
+        };
+        this.reposition();
+      },
+      true
+    );
+
+    window.addEventListener(
+      "pointerup",
+      (event) => {
+        if (this.dragPointerId !== null && this.header.hasPointerCapture?.(this.dragPointerId)) {
+          try {
+            this.header.releasePointerCapture(this.dragPointerId);
+          } catch {
+            // Ignore release failures.
+          }
+        }
+        this.isDragging = false;
+        this.dragPointerId = null;
+      },
+      true
+    );
+    window.addEventListener(
+      "mousemove",
+      (event) => {
+        if (!this.isDragging || this.dragPointerId !== null) {
+          return;
+        }
+
+        this.customPopoverPosition = {
+          left: event.clientX - this.dragOffsetX,
+          top: event.clientY - this.dragOffsetY
+        };
+        this.reposition();
+      },
+      true
+    );
+    window.addEventListener(
+      "mouseup",
+      () => {
+        this.isDragging = false;
+        this.dragPointerId = null;
+      },
+      true
+    );
+
+    window.addEventListener(
+      "pointercancel",
+      () => {
+        this.isDragging = false;
+        this.dragPointerId = null;
+      },
+      true
+    );
 
     this.closeButton.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.hidePopover();
+    });
+    this.closeButton.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.hidePopover();
+    });
+    this.closeButton.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
       this.hidePopover();
@@ -259,7 +384,7 @@ class InlinePickerApp {
   }
 
   private isWithinUi(target: EventTarget | null): boolean {
-    return target instanceof Node && this.host.contains(target);
+    return target instanceof Node && (this.host.contains(target) || this.shadowRootNode.contains(target));
   }
 
   private isUiFocused(): boolean {
@@ -271,12 +396,15 @@ class InlinePickerApp {
   }
 
   private hideAllUi(): void {
+    this.host.style.pointerEvents = "none";
     this.backdrop.hidden = true;
     this.popover.hidden = true;
     this.button.hidden = true;
     this.isPopoverOpen = false;
     this.hasSelectionContext = false;
     this.status.textContent = "";
+    this.isDragging = false;
+    this.dragPointerId = null;
   }
 
   private syncSelectionUi(): void {
@@ -344,6 +472,7 @@ class InlinePickerApp {
     }
 
     this.currentCapabilities = describeSelectionCapabilities(this.selectionSnapshot, this.caretSnapshot);
+    this.host.style.pointerEvents = "auto";
     this.button.hidden = true;
     this.backdrop.hidden = false;
     this.popover.hidden = false;
@@ -357,12 +486,15 @@ class InlinePickerApp {
   }
 
   private hidePopover(): void {
+    this.host.style.pointerEvents = "none";
     this.backdrop.hidden = true;
     this.popover.hidden = true;
     this.isPopoverOpen = false;
     this.status.textContent = "";
     this.dismissedSelectionSignature = this.hasSelectionContext ? this.getSelectionSignature(this.selectionSnapshot) : null;
     this.button.hidden = true;
+    this.isDragging = false;
+    this.dragPointerId = null;
   }
 
   private getSelectionSignature(snapshot: SelectionSnapshot): string {
@@ -397,10 +529,18 @@ class InlinePickerApp {
       return;
     }
 
-    const rect = this.currentMode === "selection" ? getSelectionRect(this.selectionSnapshot) : null;
-    const popoverWidth = 360;
-    const popoverHeight = 520;
+    const popoverWidth = 368;
+    const popoverHeight = 540;
 
+    if (this.customPopoverPosition) {
+      const left = clamp(this.customPopoverPosition.left, 12, Math.max(12, window.innerWidth - popoverWidth - 12));
+      const top = clamp(this.customPopoverPosition.top, 12, Math.max(12, window.innerHeight - popoverHeight - 12));
+      this.popover.style.left = `${left}px`;
+      this.popover.style.top = `${top}px`;
+      return;
+    }
+
+    const rect = this.currentMode === "selection" ? getSelectionRect(this.selectionSnapshot) : null;
     const top = rect
       ? clamp(rect.bottom + 12, 12, Math.max(12, window.innerHeight - popoverHeight - 12))
       : clamp(window.innerHeight / 2 - popoverHeight / 2, 12, Math.max(12, window.innerHeight - popoverHeight - 12));

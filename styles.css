@@ -45,6 +45,10 @@
   pointer-events: none;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .utc-backdrop {
   position: fixed;
   inset: 0;
@@ -123,6 +127,11 @@
   align-items: start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.utc-drag-handle {
+  cursor: move;
+  user-select: none;
 }
 
 .utc-title-wrap {
