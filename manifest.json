@@ -15,7 +15,8 @@
   "commands": {
     "open-style-picker": {
       "suggested_key": {
-        "default": "Alt+Shift+U"
+        "default": "Ctrl+Shift+U",
+        "mac": "Command+Shift+U"
       },
       "description": "Open the Unicode style picker for the current selection"
     },

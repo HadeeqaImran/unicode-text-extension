@@ -283,9 +283,7 @@ class InlinePickerApp {
     if (!hasMeaningfulSelection) {
       this.hasSelectionContext = false;
       this.dismissedSelectionSignature = null;
-      if (!this.isPopoverOpen) {
-        this.button.hidden = true;
-      }
+      this.button.hidden = true;
       return;
     }
 
@@ -301,14 +299,7 @@ class InlinePickerApp {
     this.selectionSnapshot = snapshot;
     this.hasSelectionContext = true;
     this.currentCapabilities = describeSelectionCapabilities(this.selectionSnapshot, this.caretSnapshot);
-    this.positionButton();
-
-    if (this.preferences.autoOpenPickerOnSelection && !this.preferences.showFloatingButtonOnly) {
-      this.openPicker("selection");
-      return;
-    }
-
-    this.button.hidden = false;
+    this.button.hidden = true;
   }
 
   private openPicker(mode: PickerMode): void {
@@ -324,6 +315,10 @@ class InlinePickerApp {
       this.dismissedSelectionSignature = null;
       this.sourceInput.value = freshSelection.text;
       this.currentMode = "selection";
+    } else if (mode === "selection") {
+      this.hideAllUi();
+      this.showStatus("Select text first, then use the shortcut.");
+      return;
     } else {
       this.selectionSnapshot = { kind: "none", text: "", rect: null };
       this.hasSelectionContext = false;
@@ -639,6 +634,12 @@ class InlinePickerApp {
     }
 
     if (message.type === "OPEN_PICKER") {
+      const currentSelection = captureSelectionSnapshot();
+      if (currentSelection.kind === "none" || !currentSelection.text.trim()) {
+        this.hideAllUi();
+        return { ok: false, message: "Select text first, then use the shortcut." };
+      }
+
       this.openPicker(message.mode ?? "selection");
       return { ok: this.isEnabled(), message: this.isEnabled() ? undefined : "Page integration is disabled.", context: this.currentCapabilities };
     }
