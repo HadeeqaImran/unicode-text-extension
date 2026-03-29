@@ -1,20 +1,20 @@
 :root {
   --utc-font: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
-  --utc-bg: radial-gradient(circle at top, #eef7f6 0%, #f7fafc 42%, #edf2f7 100%);
+  --utc-bg: radial-gradient(circle at top, #f4f7fb 0%, #f8fafc 48%, #eef2f7 100%);
   --utc-panel: rgba(255, 255, 255, 0.96);
   --utc-panel-strong: #ffffff;
-  --utc-panel-soft: #f5f8fb;
-  --utc-ink: #14212b;
-  --utc-muted: #5a6b77;
-  --utc-border: rgba(20, 33, 43, 0.1);
-  --utc-border-strong: rgba(25, 56, 79, 0.18);
-  --utc-accent: #0f766e;
-  --utc-accent-strong: #0b5c57;
-  --utc-accent-soft: rgba(15, 118, 110, 0.1);
-  --utc-accent-faint: rgba(15, 118, 110, 0.06);
-  --utc-success: #17603a;
-  --utc-shadow: 0 18px 44px rgba(18, 35, 49, 0.12);
-  --utc-shadow-soft: 0 8px 24px rgba(18, 35, 49, 0.08);
+  --utc-panel-soft: #f3f6fb;
+  --utc-ink: #111827;
+  --utc-muted: #66758a;
+  --utc-border: rgba(17, 24, 39, 0.08);
+  --utc-border-strong: rgba(37, 99, 235, 0.24);
+  --utc-accent: #2563eb;
+  --utc-accent-strong: #1d4ed8;
+  --utc-accent-soft: rgba(37, 99, 235, 0.1);
+  --utc-accent-faint: rgba(37, 99, 235, 0.06);
+  --utc-success: #166534;
+  --utc-shadow: 0 20px 44px rgba(15, 23, 42, 0.12);
+  --utc-shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.08);
   --utc-radius: 18px;
   --utc-radius-sm: 13px;
 }
@@ -51,7 +51,7 @@
   height: 40px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 999px;
-  background: linear-gradient(160deg, #0f766e 0%, #155e75 100%);
+  background: linear-gradient(160deg, #2563eb 0%, #1d4ed8 100%);
   color: #f4fffd;
   font: 700 15px/1 var(--utc-font);
   box-shadow: var(--utc-shadow-soft);
@@ -124,7 +124,7 @@
   line-height: 1.5;
   color: var(--utc-muted);
   background: var(--utc-accent-faint);
-  border: 1px solid rgba(15, 118, 110, 0.14);
+  border: 1px solid rgba(37, 99, 235, 0.12);
   border-radius: var(--utc-radius-sm);
   padding: 10px 11px;
 }
@@ -165,8 +165,8 @@
 .utc-close:focus,
 .utc-fab:focus {
   outline: none;
-  border-color: rgba(15, 118, 110, 0.44);
-  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+  border-color: rgba(37, 99, 235, 0.4);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
 .utc-search-wrap {
@@ -178,8 +178,8 @@
   gap: 8px;
   padding: 13px;
   border-radius: 16px;
-  background: linear-gradient(165deg, #f7fffd 0%, #ecf9f6 100%);
-  border: 1px solid rgba(15, 118, 110, 0.14);
+  background: linear-gradient(165deg, #f8fbff 0%, #eef4ff 100%);
+  border: 1px solid rgba(37, 99, 235, 0.14);
 }
 
 .utc-preview-label {
@@ -194,7 +194,7 @@
   font-size: 18px;
   line-height: 1.45;
   word-break: break-word;
-  color: #10222e;
+  color: #162033;
 }
 
 .utc-style-list {
@@ -233,9 +233,9 @@
 }
 
 .utc-style-option.is-selected {
-  border-color: rgba(15, 118, 110, 0.28);
-  background: linear-gradient(180deg, #f1fffb 0%, #e9f8f5 100%);
-  box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.08);
+  border-color: rgba(37, 99, 235, 0.24);
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.06);
 }
 
 .utc-style-name {
@@ -255,6 +255,37 @@
   gap: 8px;
 }
 
+.utc-style-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.utc-style-action {
+  border: 1px solid var(--utc-border);
+  border-radius: 11px;
+  min-height: 34px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--utc-ink);
+  font: 800 12px/1 var(--utc-font);
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.utc-style-action-primary {
+  background: linear-gradient(160deg, #2563eb 0%, #1d4ed8 100%);
+  color: #f8fbff;
+  border-color: rgba(37, 99, 235, 0.42);
+}
+
+.utc-style-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .utc-action,
 .utc-action-secondary {
   border: 1px solid var(--utc-border);
@@ -269,9 +300,9 @@
 }
 
 .utc-action-primary {
-  background: linear-gradient(160deg, #0f766e 0%, #155e75 100%);
+  background: linear-gradient(160deg, #2563eb 0%, #1d4ed8 100%);
   color: #f4fffd;
-  border-color: rgba(15, 118, 110, 0.4);
+  border-color: rgba(37, 99, 235, 0.4);
 }
 
 .utc-action-secondary {
@@ -345,6 +376,7 @@
 }
 
 .utc-action:hover,
+.utc-style-action:hover,
 .utc-action-secondary:hover,
 .utc-style-option:hover,
 .utc-close:hover {
@@ -352,6 +384,7 @@
 }
 
 .utc-action:hover,
+.utc-style-action:hover,
 .utc-action-secondary:hover {
   box-shadow: 0 6px 18px rgba(18, 35, 49, 0.08);
 }

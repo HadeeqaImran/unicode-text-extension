@@ -139,26 +139,9 @@ class InlinePickerApp {
     this.styleList.className = "utc-style-list";
     this.styleList.setAttribute("role", "listbox");
 
-    const actions = document.createElement("div");
-    actions.className = "utc-actions";
-
-    this.replaceButton.type = "button";
-    this.replaceButton.className = "utc-action utc-action-primary";
-    this.replaceButton.textContent = "Replace";
-
-    this.insertButton.type = "button";
-    this.insertButton.className = "utc-action";
-    this.insertButton.textContent = "Insert";
-
-    this.copyButton.type = "button";
-    this.copyButton.className = "utc-action";
-    this.copyButton.textContent = "Copy";
-
-    actions.append(this.replaceButton, this.insertButton, this.copyButton);
-
     this.status.className = "utc-status";
 
-    this.popover.append(header, this.contextNote, sourceLabel, this.sourceInput, searchWrap, previewCard, this.styleList, actions, this.status);
+    this.popover.append(header, this.contextNote, sourceLabel, this.sourceInput, searchWrap, previewCard, this.styleList, this.status);
     this.host.append(this.button, this.popover);
     document.documentElement.append(this.host);
     this.refreshPreview();
@@ -247,18 +230,6 @@ class InlinePickerApp {
 
     this.searchInput.addEventListener("input", () => {
       this.refreshStylesDebounced();
-    });
-
-    this.replaceButton.addEventListener("click", () => {
-      void this.applyCurrentStyle("replace");
-    });
-
-    this.insertButton.addEventListener("click", () => {
-      void this.applyCurrentStyle("insert");
-    });
-
-    this.copyButton.addEventListener("click", () => {
-      void this.applyCurrentStyle("copy");
     });
 
     chrome.runtime.onMessage.addListener((message: ContentMessage, _sender, sendResponse) => {
@@ -447,13 +418,14 @@ class InlinePickerApp {
     this.styleList.textContent = "";
 
     for (const style of this.filteredStyles) {
-      const option = document.createElement("button");
-      option.type = "button";
+      const option = document.createElement("div");
       option.className = "utc-style-option";
       option.dataset.styleId = style.id;
       option.setAttribute("role", "option");
+      option.tabIndex = 0;
       option.setAttribute("aria-selected", String(style.id === this.currentStyleId));
-      if (style.id === this.currentStyleId) {
+      const isSelected = style.id === this.currentStyleId;
+      if (isSelected) {
         option.classList.add("is-selected");
       }
 
@@ -471,9 +443,41 @@ class InlinePickerApp {
         this.refreshPreview();
         this.refreshStyleList();
       });
-      option.addEventListener("dblclick", () => {
-        void this.applyCurrentStyle(this.preferences.preferredAction);
+      option.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          this.currentStyleId = style.id;
+          this.refreshPreview();
+          this.refreshStyleList();
+        }
       });
+
+      if (isSelected) {
+        const actions = document.createElement("div");
+        actions.className = "utc-style-actions";
+        const hasSource = this.sourceInput.value.trim().length > 0;
+        const actionConfigs: Array<{ action: PreferredAction; label: string; disabled: boolean; primary?: boolean }> = [
+          { action: "replace", label: "Replace", disabled: !hasSource || !this.currentCapabilities.canReplace, primary: true },
+          { action: "insert", label: "Insert", disabled: !hasSource || !this.currentCapabilities.canInsert },
+          { action: "copy", label: "Copy", disabled: !hasSource }
+        ];
+
+        for (const config of actionConfigs) {
+          const actionButton = document.createElement("button");
+          actionButton.type = "button";
+          actionButton.className = `utc-style-action${config.primary ? " utc-style-action-primary" : ""}`;
+          actionButton.textContent = config.label;
+          actionButton.disabled = config.disabled;
+          actionButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            void this.applyCurrentStyle(config.action);
+          });
+          actions.append(actionButton);
+        }
+
+        option.append(actions);
+      }
+
       this.styleList.append(option);
     }
 
@@ -486,12 +490,7 @@ class InlinePickerApp {
   }
 
   private updateButtons(): void {
-    const hasSource = this.sourceInput.value.trim().length > 0;
     this.currentCapabilities = describeSelectionCapabilities(this.selectionSnapshot, this.caretSnapshot);
-
-    this.replaceButton.disabled = !hasSource || !this.currentCapabilities.canReplace;
-    this.insertButton.disabled = !hasSource || !this.currentCapabilities.canInsert;
-    this.copyButton.disabled = !hasSource;
     this.contextNote.textContent = this.currentCapabilities.message ?? "Replace works in editable fields. Copy is always safe.";
   }
 

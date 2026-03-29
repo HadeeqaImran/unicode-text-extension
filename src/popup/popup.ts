@@ -91,32 +91,6 @@ class PopupApp {
 
     this.styleList.className = "utc-style-list utc-style-list-popup";
 
-    const actions = document.createElement("div");
-    actions.className = "utc-actions";
-
-    this.copyButton.type = "button";
-    this.copyButton.className = "utc-action utc-action-primary";
-    this.copyButton.textContent = "Copy";
-    this.copyButton.addEventListener("click", () => {
-      void this.copy();
-    });
-
-    this.insertButton.type = "button";
-    this.insertButton.className = "utc-action";
-    this.insertButton.textContent = "Insert";
-    this.insertButton.addEventListener("click", () => {
-      void this.applyToPage("insert");
-    });
-
-    this.replaceButton.type = "button";
-    this.replaceButton.className = "utc-action";
-    this.replaceButton.textContent = "Replace";
-    this.replaceButton.addEventListener("click", () => {
-      void this.applyToPage("replace");
-    });
-
-    actions.append(this.copyButton, this.insertButton, this.replaceButton);
-
     const settings = document.createElement("section");
     settings.className = "utc-settings";
 
@@ -180,7 +154,7 @@ class PopupApp {
 
     this.status.className = "utc-status";
 
-    frame.append(header, this.contextNote, sourceLabel, this.sourceInput, searchWrap, previewCard, this.styleList, actions, settings, this.status);
+    frame.append(header, this.contextNote, sourceLabel, this.sourceInput, searchWrap, previewCard, this.styleList, settings, this.status);
     this.root.append(frame);
   }
 
@@ -270,16 +244,25 @@ class PopupApp {
     this.styleList.textContent = "";
 
     for (const style of this.filteredStyles) {
-      const option = document.createElement("button");
-      option.type = "button";
+      const option = document.createElement("div");
       option.className = "utc-style-option";
-      if (style.id === this.currentStyleId) {
+      option.tabIndex = 0;
+      const isSelected = style.id === this.currentStyleId;
+      if (isSelected) {
         option.classList.add("is-selected");
       }
       option.addEventListener("click", () => {
         this.currentStyleId = style.id;
         this.refreshPreview();
         this.refreshStyleList();
+      });
+      option.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          this.currentStyleId = style.id;
+          this.refreshPreview();
+          this.refreshStyleList();
+        }
       });
 
       const label = document.createElement("span");
@@ -291,6 +274,38 @@ class PopupApp {
       preview.textContent = convertText(style.id, this.sourceInput.value || style.previewExample);
 
       option.append(label, preview);
+
+      if (isSelected) {
+        const actions = document.createElement("div");
+        actions.className = "utc-style-actions";
+        const hasSource = this.sourceInput.value.trim().length > 0;
+        const actionConfigs: Array<{
+          label: string;
+          primary?: boolean;
+          disabled: boolean;
+          run: () => Promise<void>;
+        }> = [
+          { label: "Replace", primary: true, disabled: !this.preferences.enabled || !hasSource || !this.currentContext.canReplace, run: () => this.applyToPage("replace") },
+          { label: "Insert", disabled: !this.preferences.enabled || !hasSource || !this.currentContext.canInsert, run: () => this.applyToPage("insert") },
+          { label: "Copy", disabled: !hasSource, run: () => this.copy() }
+        ];
+
+        for (const config of actionConfigs) {
+          const actionButton = document.createElement("button");
+          actionButton.type = "button";
+          actionButton.className = `utc-style-action${config.primary ? " utc-style-action-primary" : ""}`;
+          actionButton.textContent = config.label;
+          actionButton.disabled = config.disabled;
+          actionButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            void config.run();
+          });
+          actions.append(actionButton);
+        }
+
+        option.append(actions);
+      }
+
       this.styleList.append(option);
     }
 
@@ -303,10 +318,9 @@ class PopupApp {
   }
 
   private updateButtons(): void {
-    const hasSource = this.sourceInput.value.trim().length > 0;
-    this.copyButton.disabled = !hasSource;
-    this.insertButton.disabled = !this.preferences.enabled || !hasSource || !this.currentContext.canInsert;
-    this.replaceButton.disabled = !this.preferences.enabled || !hasSource || !this.currentContext.canReplace;
+    this.contextNote.textContent =
+      this.currentContext.message ??
+      (this.preferences.enabled ? "Replace works in editable fields. Copy is always safe." : "Page integration is disabled. You can still use manual input and copy.");
   }
 
   private async savePreferences(patch: Partial<UserPreferences>): Promise<void> {
