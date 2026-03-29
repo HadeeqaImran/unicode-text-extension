@@ -39,9 +39,12 @@
 }
 
 .utc-popup-frame {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
   padding: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .utc-fab {
@@ -73,9 +76,31 @@
   z-index: 2147483646;
   width: min(368px, calc(100vw - 24px));
   max-height: min(540px, calc(100vh - 24px));
+  box-sizing: border-box;
   padding: 16px;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.utc-popover > *,
+.utc-popup-frame > * {
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.utc-popover::-webkit-scrollbar {
+  width: 10px;
+}
+
+.utc-popover::-webkit-scrollbar-thumb {
+  background: rgba(90, 107, 119, 0.24);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .utc-header {
@@ -120,6 +145,7 @@
 }
 
 .utc-context-note {
+  box-sizing: border-box;
   font-size: 12px;
   line-height: 1.5;
   color: var(--utc-muted);
@@ -127,6 +153,7 @@
   border: 1px solid rgba(37, 99, 235, 0.12);
   border-radius: var(--utc-radius-sm);
   padding: 10px 11px;
+  overflow-wrap: anywhere;
 }
 
 .utc-field-label {
@@ -174,6 +201,7 @@
 }
 
 .utc-preview-card {
+  box-sizing: border-box;
   display: grid;
   gap: 8px;
   padding: 13px;
@@ -194,33 +222,25 @@
   font-size: 18px;
   line-height: 1.45;
   word-break: break-word;
+  overflow-wrap: anywhere;
   color: #162033;
 }
 
 .utc-style-list {
+  box-sizing: border-box;
   display: grid;
   gap: 8px;
-  max-height: 230px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible !important;
   padding-right: 2px;
 }
 
 .utc-style-list-popup {
-  max-height: 246px;
-}
-
-.utc-style-list::-webkit-scrollbar {
-  width: 9px;
-}
-
-.utc-style-list::-webkit-scrollbar-thumb {
-  background: rgba(90, 107, 119, 0.24);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  max-height: none;
 }
 
 .utc-style-option {
+  box-sizing: border-box;
   display: grid;
   gap: 5px;
   text-align: left;
@@ -230,6 +250,8 @@
   background: #fbfdff;
   cursor: pointer;
   transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .utc-style-option.is-selected {
@@ -248,6 +270,7 @@
   font-size: 14px;
   color: var(--utc-muted);
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .utc-actions {
@@ -318,6 +341,7 @@
 }
 
 .utc-settings {
+  box-sizing: border-box;
   display: grid;
   gap: 10px;
   padding: 13px;
@@ -351,6 +375,7 @@
   min-height: 18px;
   font-size: 12px;
   color: var(--utc-success);
+  overflow-wrap: anywhere;
 }
 
 .utc-empty-state {
